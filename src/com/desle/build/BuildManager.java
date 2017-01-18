@@ -1,5 +1,6 @@
 package com.desle.build;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+
+import com.desle.main.Main;
 
 public class BuildManager {
 	
@@ -58,32 +61,77 @@ public class BuildManager {
 	
 	@SuppressWarnings("deprecation")
 	public void showTemplate(Player player, Location location, Build build) {
+		if (templateLocation.get(player) != null && templateLocation.get(player).distance(location) < 1)
+			return;
+		
 		removeTemplate(player);
 		
 		if (templatePositions.containsKey(player) || templateLocation.containsKey(player))
 			return;
+
+		Rotation rotation = getRotation(player.getLocation().getYaw());
+		boolean canPlace = canPlace(rotation, location, build.getBuildBlocks());
+		
+		byte data = 14;
+		
+		if (canPlace)
+			data = 13;
 		
 		for (BuildBlock buildblock : build.getBuildBlocks()) {
 			Location position = buildblock.getPosition();
 			
-			Rotation rotation = getRotation(player.getLocation().getYaw());
 			Location blockLocation = getBuildLocation(rotation, location, position);
 			
-			player.sendBlockChange(blockLocation, Material.STAINED_GLASS, (byte) 0);
+			Material material = Material.STAINED_GLASS;
 			
-			templatePositions.get(player).add(location);
+			if (!replaceableBlocks.contains(blockLocation.getBlock().getType()))
+				material = Material.STAINED_CLAY;
+			
+			player.sendBlockChange(blockLocation, material, data);
+			
+			if (!templatePositions.containsKey(player))
+				templatePositions.put(player, new ArrayList<Location>());
+			
+			templatePositions.get(player).add(blockLocation);
 		}
 		
 		templateLocation.put(player, location);
 	}
 	
 	public void removeTemplate(Player player) {
+		if (!templatePositions.containsKey(player) || !templateLocation.containsKey(player))
+			return;
+		
 		for (Location location : templatePositions.get(player)) {
 			location.getBlock().getState().update();
 		}
 		
 		templatePositions.remove(player);
 		templateLocation.remove(player);
+	}
+	
+	List<Material> replaceableBlocks = new ArrayList<Material>();
+	
+	public void initReplaceableBlocks() {
+		List<String> rawblocks = Main.getMain().getConfig().getStringList("replaceable-blocks");
+		
+		for (String rawblock : rawblocks) {
+			replaceableBlocks.add(Material.valueOf(rawblock.toUpperCase()));
+		}
+	}
+	
+	public boolean canPlace(Rotation rotation, Location location, List<BuildBlock> blocks) {
+		if (replaceableBlocks.isEmpty())
+			initReplaceableBlocks();
+		
+		for (BuildBlock block : blocks) {
+			Location blockLocation = getBuildLocation(rotation, location, block.getPosition());
+			
+			if (!replaceableBlocks.contains(blockLocation.getBlock().getType()))
+				return false;
+		}
+		
+		return true;
 	}
 	
 	public Location getBuildLocation(Rotation rotation, Location location, Location position) {
@@ -106,6 +154,8 @@ public class BuildManager {
 						z -= position.getX();
 						break;
 		}
+		
+		y = (int) (y + position.getY());
 		
 		return new Location(world, x, y, z);
 	}
