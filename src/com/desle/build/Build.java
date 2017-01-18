@@ -7,14 +7,14 @@ public class Build {
 	
 	public static List<Build> builds = new ArrayList<Build>();
 	
-	private int id;
+	private String name;
 	private List<BuildBlock> blocks;
 	private boolean canFloat;
 	private int timeToBuild;
 	
 	
-	public Build(int id, List<BuildBlock> blocks, boolean canFloat, int timeToBuild) {
-		this.id = id;
+	public Build(String name, List<BuildBlock> blocks, boolean canFloat, int timeToBuild) {
+		this.name = name;
 		this.blocks = blocks;
 		this.canFloat = canFloat;
 		this.timeToBuild = timeToBuild;
@@ -34,7 +34,7 @@ public class Build {
 		return this.timeToBuild;
 	}
 	
-	public int getId() {
-		return this.id;
+	public String getName() {
+		return this.name;
 	}
 }

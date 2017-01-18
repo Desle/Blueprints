@@ -17,22 +17,39 @@ import com.desle.main.Main;
 
 public class BuildLoader {
 	
+	private static BuildLoader instance;
+	public static BuildLoader getInstance() {
+		if (instance == null) 
+			instance = new BuildLoader();
+		
+		return instance;
+	}
+	
 	public void loadBuilds() {
 		FileConfiguration f = getBuildsFile();
+		
+		if (f.getConfigurationSection("builds") == null)
+			return;
 		
 		for (String key : f.getConfigurationSection("builds").getKeys(false)) {
 			String path = "builds." + key + ".";
 			
-			int id = f.getInt(path + "id");
 			boolean canFloat = f.getBoolean(path + "can-float");
 			int timeToBuild = f.getInt(path + "time-to-build");
 			
 			List<BuildBlock> blocks = new ArrayList<BuildBlock>();
 			
-			for (String blockkey : f.getConfigurationSection(path + "blocks").getKeys(false)) {
-				String blockpath = path + blockkey + ".";
+			for (String rawblock : f.getStringList(path + "blocks")) {
 				
-				String rawposition = f.getString(blockpath + "position");
+				String[] rawblockinfo = rawblock.split(":");
+				
+				byte blockdata = (byte) Integer.parseInt(rawblockinfo[0]);
+				
+				String blockmaterialname = rawblockinfo[1].toUpperCase();
+				
+				Material blockmaterial = Material.valueOf(blockmaterialname);
+				
+				String rawposition = rawblockinfo[2];
 				String[] coords = rawposition.split(",");
 				
 				int x = Integer.parseInt(coords[0]);
@@ -40,16 +57,44 @@ public class BuildLoader {
 				int z = Integer.parseInt(coords[2]);
 				
 				Location blockposition = new Location(null, x, y, z);
-				byte blockdata = (byte) f.getInt(blockpath + "data");
-				Material blockmaterial;
+				
+				BuildBlock block = new BuildBlock(blockposition, blockmaterial, blockdata);
+				
+				blocks.add(block);
 			}
+			
+			
+			new Build(key, blocks, canFloat, timeToBuild);
 		}
 	}
 	
 	public void saveBuild(Build build) {
-		// save build
+		FileConfiguration f = getBuildsFile();
 		
+		String name = build.getName();
+		String path = "builds." + name + ".";
 		
+		f.set(path + "can-float", build.canFloat());
+		f.set(path + "time-to-build", build.getTimeToBuild());
+		
+		List<String> blocks = new ArrayList<String>();
+		
+		for (BuildBlock block : build.getBuildBlocks()) {
+			int data = (int) block.getData();
+			String material = block.getMaterial().name();
+			
+			int x = (int) block.getPosition().getX();
+			int y = (int) block.getPosition().getY();
+			int z = (int) block.getPosition().getZ();
+			
+			String position = x + "," + y + "," + z;
+			
+			blocks.add(data + ":" + material + ":" + position);
+		}
+		
+		f.set(path + "blocks", blocks);
+		
+		saveBuildsFile();
 	}
 	
 	public void saveBuilds() {

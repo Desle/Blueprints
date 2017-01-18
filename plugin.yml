@@ -1,4 +1,4 @@
 name: Blueprints
-main: com.desle.main.main
+main: com.desle.main.Main
 author: Desle
 version: 1.0

@@ -20,6 +20,15 @@ public class BuildManager {
 	}
 	
 	
+	public Build getBuildByName(String name) {
+		for (Build build : Build.builds) {
+			if (build.getName().equalsIgnoreCase(name))
+				return build;
+		}
+		
+		return null;
+	}
+	
 	//
 	public enum Rotation { NORTH, EAST, SOUTH, WEST; }
 	
