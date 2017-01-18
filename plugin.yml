@@ -4,3 +4,4 @@ author: Desle
 version: 1.0
 commands:
   testbuild:
+  testblueprint:

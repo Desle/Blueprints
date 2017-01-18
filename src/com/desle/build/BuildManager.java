@@ -38,6 +38,7 @@ public class BuildManager {
 	
 	Map<Player, Location> templateLocation = new HashMap<Player, Location>();
 	Map<Player, List<Location>> templatePositions = new HashMap<Player, List<Location>>();
+	Map<Player, Boolean> canBuild = new HashMap<Player, Boolean>();
 	
 	@SuppressWarnings("deprecation")
 	public void build(Player player, Build build) {
@@ -63,14 +64,25 @@ public class BuildManager {
 	public void showTemplate(Player player, Location location, Build build) {
 		if (templateLocation.get(player) != null && templateLocation.get(player).distance(location) < 1)
 			return;
+
+		Rotation rotation = getRotation(player.getLocation().getYaw());
 		
-		removeTemplate(player);
+		List<Location> exceptions = new ArrayList<Location>();
+		
+		for (BuildBlock buildblock : build.getBuildBlocks()) {
+			Location locationexception = getBuildLocation(rotation, location, buildblock.getPosition());
+			exceptions.add(locationexception);
+		}
+		
+		removeTemplate(player, exceptions);
 		
 		if (templatePositions.containsKey(player) || templateLocation.containsKey(player))
 			return;
 
-		Rotation rotation = getRotation(player.getLocation().getYaw());
 		boolean canPlace = canPlace(rotation, location, build.getBuildBlocks());
+		
+
+		canBuild.put(player, canPlace);
 		
 		byte data = 14;
 		
@@ -98,16 +110,18 @@ public class BuildManager {
 		templateLocation.put(player, location);
 	}
 	
-	public void removeTemplate(Player player) {
+	public void removeTemplate(Player player, List<Location> exceptions) {
 		if (!templatePositions.containsKey(player) || !templateLocation.containsKey(player))
 			return;
 		
 		for (Location location : templatePositions.get(player)) {
-			location.getBlock().getState().update();
+			if (exceptions == null || !exceptions.contains(location))
+				location.getBlock().getState().update();
 		}
 		
 		templatePositions.remove(player);
 		templateLocation.remove(player);
+		canBuild.remove(player);
 	}
 	
 	List<Material> replaceableBlocks = new ArrayList<Material>();

@@ -3,18 +3,17 @@ package com.desle.blueprint;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import com.desle.build.Build;
-import com.desle.build.BuildBlock;
 import com.desle.build.BuildManager;
 import com.desle.main.Main;
 
@@ -42,11 +41,25 @@ public class BlueprintLoader {
 			int range = f.getInt(path + "range");
 			String buildname = f.getString(path + "build");
 			
+			String title = f.getString(path + "item.title");
+			List<String> description = f.getStringList(path + "item.description");
+			String rawmaterial = f.getString(path + "item.material");
+			byte data = (byte) f.getInt(path + "item.data");
+			
+			Material material = Material.valueOf(rawmaterial);
+			
+			@SuppressWarnings("deprecation")
+			ItemStack item = new ItemStack(material, 1, (short) 0, data);
+			ItemMeta itemmeta = item.getItemMeta();
+			itemmeta.setLore(description);
+			itemmeta.setDisplayName(title);
+			item.setItemMeta(itemmeta);
+			
 			BuildManager bm = BuildManager.getInstance();
 			Build build = bm.getBuildByName(buildname);
 			
 			if (build != null)
-				new Blueprint(name, cooldown, range, build);
+				new Blueprint(name, cooldown, range, build, item);
 		}
 	}
 	
